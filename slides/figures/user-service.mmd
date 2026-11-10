@@ -1,0 +1,37 @@
+---
+config:
+  layout: elk
+  theme: neutral
+---
+flowchart LR
+    C[Clients] -- "GET /users/{id}<br/>POST /users/{id}" --> GW
+    J[Job Service] -- "POST /launderers/{id}/rating" --> GW
+
+    subgraph Public["Public Interface"]
+        GW["API Gateway<br/>rate limiting on POST"] --> LB[Load Balancer]
+    end
+
+    subgraph Logic["Service Logic & Dependencies"]
+        subgraph Cluster["Horizontally scaled cluster"]
+            U1[User Service 1]
+            U2[User Service 2]
+            UN[...]
+        end
+        Cache{{Cache}}
+        DB[("NoSQL Database<br/>eventual consistency")]
+        IDP([External Identity Provider])
+    end
+
+    LB --> Cluster
+    Cluster -- "Validate token" --> IDP
+    Cluster -- "READ (GET), read-heavy 100:1<br/>cache hit p99 < 150 ms" --> Cache
+    Cache -- "Cache miss: fetch profile" --> DB
+    DB -- "Save to cache" --> Cache
+    Cluster -- "WRITE (POST), p99 < 500 ms" --> DB
+
+    subgraph Storage["Data Storage"]
+        CP["CustomerProfile<br/>saved_address, laundry_preferences"]
+        LP["LaundererProfile<br/>average_rating, total_ratings"]
+    end
+    DB -- "Stores/Updates" --> CP
+    DB -- "Stores/Updates" --> LP

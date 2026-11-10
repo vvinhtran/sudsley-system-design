@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use these materials, please cite the paper below."
+title: "Sudsley: A Case-Based System Design Module"
+type: dataset
+license:
+  - CC-BY-4.0
+  - MIT
+repository-code: "https://github.com/vvinhtran/sudsley-system-design"
+authors:
+  - given-names: Vincent
+    family-names: Tran
+    orcid: "https://orcid.org/0009-0006-3584-9233"
+  - given-names: Raymond
+    family-names: Klefstad
+    orcid: "https://orcid.org/0009-0009-5396-9580"
+  - given-names: Susan Anderson
+    family-names: Klefstad
+    orcid: "https://orcid.org/0009-0008-0304-5171"
+  - given-names: Michael
+    family-names: Shindler
+    orcid: "https://orcid.org/0000-0002-3365-1729"
+preferred-citation:
+  type: conference-paper
+  title: "Demystifying System Design: A Case-Based Approach for Advanced CS Courses"
+  authors:
+    - given-names: Vincent
+      family-names: Tran
+      orcid: "https://orcid.org/0009-0006-3584-9233"
+    - given-names: Raymond
+      family-names: Klefstad
+      orcid: "https://orcid.org/0009-0009-5396-9580"
+    - given-names: Susan Anderson
+      family-names: Klefstad
+      orcid: "https://orcid.org/0009-0008-0304-5171"
+    - given-names: Michael
+      family-names: Shindler
+      orcid: "https://orcid.org/0000-0002-3365-1729"
+  collection-title: "Proceedings of the 58th ACM Technical Symposium on Computer Science Education V.1 (SIGCSE TS 2027)"
+  conference:
+    name: "SIGCSE TS 2027"
+    city: Sacramento
+    region: CA
+    country: US
+    date-start: 2027-02-17
+    date-end: 2027-02-20
+  publisher:
+    name: ACM
+  year: 2027
+  doi: 10.1145/3857222.3860225

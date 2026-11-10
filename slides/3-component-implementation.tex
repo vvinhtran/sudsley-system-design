@@ -1,0 +1,75 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{sudsley}
+
+\title{System Design}
+\subtitle{Component implementation}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{How to approach a new codebase}
+  \centering
+  \large
+  \mbox{1.\ Understand} \quad$\rightarrow$\quad \mbox{2.\ Assimilate} \quad$\rightarrow$\quad
+  \mbox{3.\ Implement} \quad$\rightarrow$\quad \mbox{4.\ Verify}
+\end{frame}
+
+\begin{frame}{1. Understand}
+  \begin{itemize}
+    \item \textbf{Start with the README.} Set up your development environment. Check the main
+      folder structure.
+    \item \textbf{Identify the major components} (database, API, front end) and the main
+      technologies used.
+    \item \textbf{Connect the dots.} Choose one simple feature and trace its path through the
+      code. Follow the data: where does it start, where does it go, what happens to it?
+    \item \textbf{Read} comments, internal documentation, and file names to see how the
+      pieces fit together.
+  \end{itemize}
+  \alert{Goal:} build a mental model of the code's architecture and logic.
+\end{frame}
+
+\begin{frame}{2. Assimilate}
+  \begin{itemize}
+    \item \textbf{Become a ``code chameleon.''} Your first job is to blend in. Mimic the
+      style you see: naming conventions, comment format, project structure.
+    \item \textbf{Trust your intuition.} If the language is new, don't panic. Use your
+      general programming knowledge to follow the logic; the syntax comes as you work.
+  \end{itemize}
+  \alert{Goal:} learn the code's patterns and local dialect before you write anything new.
+\end{frame}
+
+\begin{frame}{3. Implement}
+  \begin{itemize}
+    \item \textbf{Make a small, controlled change.} It is the fastest way to learn.
+    \item Start with a tiny, well-defined bug fix or a very simple feature.
+    \item This forces you to engage with the code, its patterns, and its dependencies.
+  \end{itemize}
+  \alert{Goal:} move from passive observer to active contributor.
+\end{frame}
+
+\begin{frame}{4. Verify}
+  Prove your change works, and that you didn't break anything else.
+  \begin{itemize}
+    \item Run the project's existing test suite: unit tests, integration tests.
+    \item Try the change by hand where you can. In HW3 there is no app to click through; the
+      tests and the simulation are how you run the service.
+  \end{itemize}
+  \alert{Goal:} confirm your implementation is correct and the codebase is still stable.
+\end{frame}
+
+\begin{frame}{Homework 3: implement the Machine Service}
+  Complete the \texttt{ApiHandler} class in \texttt{src/handler/api.ts} of the starter
+  repository.
+
+  \medskip
+  Submit:
+  \begin{itemize}
+    \item all source code, and
+    \item a report (PDF) with a screenshot of the service's performance statistics and a
+      short analysis.
+  \end{itemize}
+  \handout{assignments/hw3-machine-service/HOMEWORK.md}
+\end{frame}
+
+\end{document}

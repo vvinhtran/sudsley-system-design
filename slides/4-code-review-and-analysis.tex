@@ -1,0 +1,310 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{sudsley}
+
+\title{System Design}
+\subtitle{Code review and analysis}
+
+% A code sample on the left, its review points revealed one by one on the right.
+\lstset{basicstyle=\ttfamily\fontsize{6}{7.2}\selectfont}
+\newenvironment{sample}[1]
+  {\samplelabel{#1}\begin{columns}[T]\begin{column}{0.66\textwidth}}
+  {\end{column}\end{columns}}
+\newcommand{\review}{\end{column}\begin{column}{0.31\textwidth}\footnotesize}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{Recap: Homework 3}
+  Complete the \texttt{ApiHandler} class in \texttt{src/handler/api.ts}, and submit:
+  \begin{itemize}
+    \item all source code, and
+    \item a report (PDF) with a screenshot of the service's performance statistics and a
+      short analysis.
+  \end{itemize}
+\end{frame}
+
+\section{Engineering currency}
+
+\begin{frame}{Engineering currency}
+  \begin{enumerate}
+    \item \textbf{Machine currency, the ``real'' cost.}
+      CPU cycles, memory, database I/O, network calls.
+      In industry, efficiency is money.
+    \item \textbf{Human currency, the ``cognitive'' cost.}
+      Readability, maintainability, time to understand.
+      \begin{itemize}
+        \item Code is read far more often than it is written.
+        \item Cognitive load: how much effort does it take to see what the code does?
+        \item Debug time: how fast can you fix it?
+      \end{itemize}
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Machine currency}
+  In the homework, efficiency is measured in \alert{units}. In the real world, units become
+  a computing bill.
+
+  \medskip
+  An illustration. Suppose 1 unit = \$0.0001, over 10k requests:
+  \begin{itemize}
+    \item Implementation X costs 1.5 million units: \$150.00
+    \item Implementation Y costs 140k units: \$14.00
+  \end{itemize}
+  \pause
+  Scale to 1 million users (100$\times$ the requests), against a \$10k monthly budget:
+  \begin{itemize}
+    \item X's bill: \$15k a month. Over budget: \alert{bankruptcy.}
+    \item Y's bill: \$1.4k a month. Well under: \alert{profit!}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{What the simulation charges}
+  Every request in the HW3 simulation also pays:
+  \begin{itemize}
+    \item 128 units to check the token with the Identity Provider
+    \item 256 units for \emph{every} \texttt{getInstance()} call on the database table or an
+      external client
+  \end{itemize}
+  So your totals will be well above the illustration. Compare them with each other.
+\end{frame}
+
+\begin{frame}{Human currency}
+  Key metrics:
+  \begin{itemize}
+    \item Time to understand (TTU)
+    \item Mean time to repair (MTTR)
+  \end{itemize}
+  Higher TTU means higher MTTR.
+  \pause
+
+  \medskip
+  It's 3:00 AM and the production server is down.
+  \begin{itemize}
+    \item \textbf{Complex code:} two hours or more to fix, lost revenue, escalation to your
+      manager.
+    \item \textbf{Clean code:} under ten minutes to fix; customers may never notice.
+  \end{itemize}
+\end{frame}
+
+\section{Code samples}
+
+\begin{frame}[fragile]{Re-reading what you just wrote}
+\begin{sample}{A}
+\begin{lstlisting}
+private handleRequestMachine(
+    request: RequestMachineRequestModel,
+): MachineResponseModel {
+    const table = MachineStateTable.getInstance();
+    const machines = table.listMachinesAtLocation(request.locationId);
+    const available = machines.find(m => m.status === MachineStatus.AVAILABLE);
+    if (!available) {
+        return { statusCode: HttpResponseCode.NOT_FOUND, machine: undefined };
+    }
+    table.updateMachineJobId(available.machineId, request.jobId);
+    table.updateMachineStatus(
+        available.machineId, MachineStatus.AWAITING_DROPOFF);
+    const updated = table.getMachine(available.machineId)!;
+    this.cache.put(updated.machineId, updated);
+    return { statusCode: HttpResponseCode.OK, machine: updated };
+}
+\end{lstlisting}
+\review
+\begin{itemize}
+  \item<2-> Updates the database, then immediately queries it.
+  \item<2-> An unnecessary read.
+  \item<3-> \textbf{Why?} Lack of confidence in local state: the programmer wants to be
+    ``sure'' they have the latest data.
+\end{itemize}
+\end{sample}
+\end{frame}
+
+\begin{frame}[fragile]{Building the result in memory}
+\begin{sample}{B}
+\begin{lstlisting}
+private handleRequestMachine(
+    request: RequestMachineRequestModel,
+): MachineResponseModel {
+    const table = MachineStateTable.getInstance();
+    const machines = table.listMachinesAtLocation(request.locationId);
+    var available = machines.find(m => m.status === MachineStatus.AVAILABLE);
+    if (!available) {
+        return { statusCode: HttpResponseCode.NOT_FOUND, machine: undefined };
+    }
+    const updatedMachine = {
+        machineId: available.machineId,
+        locationId: available.locationId,
+        currentJobId: request.jobId,
+        status: MachineStatus.AWAITING_DROPOFF
+    }
+    table.updateMachineStatus(updatedMachine.machineId, updatedMachine.status);
+    table.updateMachineJobId(
+        updatedMachine.machineId, updatedMachine.currentJobId);
+    this.cache.put(updatedMachine.machineId, updatedMachine);
+    return { statusCode: HttpResponseCode.OK, machine: updatedMachine };
+}
+\end{lstlisting}
+\review
+\begin{itemize}
+  \item<2-> Constructs the updated item in memory.
+  \item<2-> That costs nothing!
+  \item<3-> \textbf{Takeaway:} if you own the data transformation, don't pay the database to
+    repeat back what you just did.
+  \item<4-> \textbf{Aside:} \texttt{var} makes readers check for reassignment. Prefer
+    \texttt{const}.
+\end{itemize}
+\end{sample}
+\end{frame}
+
+\begin{frame}{A versus B}
+  \centering
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    Operation & A (re-read) & B (in memory) \\
+    \midrule
+    List machines & 8 & 8 \\
+    Update status & 15 & 15 \\
+    Update job & 12 & 12 \\
+    Get result & 8 (database read) & 0 (memory) \\
+    Cache put & 6 & 6 \\
+    \midrule
+    \textbf{Total units} & \textbf{49} & \textbf{41} \\
+    \bottomrule
+  \end{tabular}
+
+  \bigskip
+  Database and cache work only; both also pay the same connection and token charges.
+  Re-reading adds 8 units: about 20\% more than B.
+\end{frame}
+
+\begin{frame}{Two requests, one machine}
+  A and B both read the list, pick an available machine, then write to it.
+  \pause
+  \begin{itemize}
+    \item Two requests for the same location arrive together.
+    \item Both pick the same machine. Both reserve it.
+  \end{itemize}
+  \pause
+  \alert{How would you prevent that?} A conditional write that succeeds only if the machine is
+  still \texttt{AVAILABLE} (compare-and-set), a lock, or a transaction.
+\end{frame}
+
+\begin{frame}[fragile]{Cache lookaside}
+\begin{sample}{C}
+\begin{lstlisting}
+private handleGetMachine(
+    request: GetMachineRequestModel,
+): MachineResponseModel {
+    const table = MachineStateTable.getInstance();
+    const cached = this.cache.get(request.machineId);
+    if (cached) return { statusCode: HttpResponseCode.OK, machine: cached };
+    const doc = table.getMachine(request.machineId);
+    if (!doc) return { statusCode: HttpResponseCode.NOT_FOUND };
+    this.cache.put(request.machineId, doc);
+    return { statusCode: HttpResponseCode.OK, machine: doc };
+}
+\end{lstlisting}
+\review
+\begin{itemize}
+  \item<2-> \alert{This is good.}
+  \item<3-> \textbf{Cache lookaside:} checks the cache first and skips the database on a hit.
+  \item<4-> \textbf{Return early:} readable, no deep nesting.
+  \item<5-> \textbf{But:} \texttt{getInstance()} runs before the cache check, so even a hit
+    pays a 256-unit connection. Get the table only on a miss, or once in the constructor.
+\end{itemize}
+\end{sample}
+\end{frame}
+
+\begin{frame}{Is the cache worth it?}
+  \centering
+  {\small Counting only cache and database operations:}\par\smallskip
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    Path & Units per call \\
+    \midrule
+    Cache hit & 0 \\
+    Cache miss: miss 4 + database read 8 + cache write 6 & 18 \\
+    No cache: database read & 8 \\
+    \bottomrule
+  \end{tabular}
+
+  \bigskip
+  \raggedright
+  \pause
+  Over 10k calls at a 50\% hit rate: \alert{90k units with the cache, 80k without.}
+
+  \pause
+  Caching pays off only above about a 56\% hit rate.
+  What hit rate did \emph{your} simulation run report?
+\end{frame}
+
+\begin{frame}[fragile]{Extra work in the error path}
+\begin{sample}{D}
+\begin{lstlisting}
+private handleStartMachine(
+    request: StartMachineRequestModel,
+): MachineResponseModel {
+    // ... [Validation logic omitted] ...
+    const smartMachine = SmartMachineClient.getInstance();
+    try {
+        smartMachine.startCycle(request.machineId);
+        // ... [Success logic omitted] ...
+    }
+    catch (err) {
+        db.updateMachineStatus(request.machineId, MachineStatus.ERROR);
+        machine = db.getMachine(request.machineId);
+        if (machine) {
+            this.cache.put(request.machineId, machine);
+        }
+        return { statusCode: HttpResponseCode.HARDWARE_ERROR, machine };
+    }
+}
+\end{lstlisting}
+\review
+\begin{itemize}
+  \item<2-> On a hardware failure, control jumps to the \texttt{catch}.
+  \item<2-> Writing \texttt{ERROR} is necessary; re-reading the machine is Sample A's extra
+    read, on a path that is already failing.
+  \item<3-> Bigger questions: is the machine left half-started? Should it call
+    \texttt{forceStop}, retry, or time out?
+\end{itemize}
+\end{sample}
+\end{frame}
+
+\begin{frame}[fragile]{Idiomatic code that hides a cost}
+\begin{sample}{E}
+\begin{lstlisting}
+private handleRequestMachine(
+    request: RequestMachineRequestModel,
+): MachineResponseModel {
+    const db = MachineStateTable.getInstance();
+    const availableMachines = db.listMachinesAtLocation(request.locationId)
+        .filter(m => m.status === MachineStatus.AVAILABLE);
+    if (availableMachines.length === 0) {
+        return { statusCode: HttpResponseCode.NOT_FOUND };
+    }
+    const machine = availableMachines[0];
+    // ... [Update logic omitted] ...
+}
+\end{lstlisting}
+\review
+\begin{itemize}
+  \item<2-> What does \texttt{.filter(...)} do? Check the documentation (or ask an AI).
+  \item<3-> It looks clean but hides an efficiency flaw: it walks the \emph{entire} array.
+    A location with 1,000 machines checks all of them, every time.
+  \item<4-> \texttt{.find(...)} stops at the first match. Same $O(N)$ worst case, but it exits
+    early whenever an available machine comes first.
+\end{itemize}
+\end{sample}
+\end{frame}
+
+\begin{frame}{Takeaways}
+  \begin{itemize}
+    \item Once the logic works, check it briefly for efficiency.
+    \item In an unfamiliar language or codebase, convenient-looking constructs are sometimes
+      traps. Verify they do what you think.
+    \item Ask (a search engine or an AI): is there a better way to do this?
+  \end{itemize}
+\end{frame}
+
+\end{document}

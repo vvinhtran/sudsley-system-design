@@ -1,0 +1,52 @@
+---
+config:
+  layout: elk
+  theme: neutral
+---
+flowchart LR
+    subgraph Clients
+        CA[Customer App]
+        LA[Launderer App]
+    end
+
+    subgraph Backend["Sudsley Backend Services"]
+        JS[Job Service]
+        PS[Payment Service]
+        LS[Location Service]
+        MS[Machine Service]
+        US[User Service]
+        NS[Notification Service]
+    end
+
+    subgraph External["External & Proprietary APIs"]
+        PP[Payment Provider]
+        MP[Maps Provider]
+        IDP[Identity Provider]
+        SM[Smart Machine API]
+    end
+
+    CA -- "Request Job, Track, Pay, Rate" --> JS
+    LA -- "Accept Job, Update Status" --> JS
+    CA -- "Manage Payment Methods" --> PS
+    LA -- "Manage Payouts" --> PS
+    CA -- "View Map" --> LS
+    LA -- "Send Location" --> LS
+    LA -- "Request Machine" --> MS
+    CA -- "Manage Profile Data" --> US
+    LA -- "Manage Profile Data" --> US
+    CA -- "Login/Signup" --> IDP
+    LA -- "Login/Signup" --> IDP
+
+    JS -- "Trigger Charge / Payout" --> PS
+    JS -- "Find Nearby Launderers" --> LS
+    JS -- "Get Machine Status" --> MS
+    JS -- "Get/Update Ratings" --> US
+    JS -- "Send Job Alerts/Updates" --> NS
+
+    NS -- "Push Notification" --> CA
+    NS -- "Push Notification" --> LA
+
+    PS -- "Process Charge, Payout" --> PP
+    LS -- "Get Routes, ETAs, Maps" --> MP
+    MS -- "getStatus(), startCycle()" --> SM
+    US -- "Authenticates User / Manages Identity" --> IDP

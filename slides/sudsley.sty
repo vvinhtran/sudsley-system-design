@@ -1,0 +1,63 @@
+% Shared look for the four Sudsley lecture decks.
+\ProvidesPackage{sudsley}
+
+\usetheme{moloch}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, positioning, arrows.meta}
+
+\author{Vincent Tran}
+\date{}
+\titlegraphic{}
+
+\definecolor{sudsblue}{HTML}{1F6F8B}
+\definecolor{sudsteal}{HTML}{2BB3A3}
+\definecolor{codebg}{HTML}{F5F7F8}
+\definecolor{codekw}{HTML}{1F4E9B}
+\definecolor{codestr}{HTML}{8B3A1F}
+\definecolor{codecom}{HTML}{6A737D}
+\setbeamercolor{frametitle}{bg=sudsblue}
+\setbeamercolor{progress bar}{fg=sudsteal}
+\setbeamercolor{alerted text}{fg=sudsblue!80!black}
+
+\lstdefinelanguage{TypeScript}{
+  morekeywords={private,public,const,var,let,return,if,else,try,catch,throw,new,
+    class,interface,export,import,from,undefined,null,true,false},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+}
+\lstset{
+  language=TypeScript,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom}\itshape,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codebg},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  xleftmargin=4pt,
+  xrightmargin=4pt,
+}
+
+% A sample label in the top-right corner of a code frame.
+\newcommand{\samplelabel}[1]{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north east, xshift=-6mm, yshift=-12mm, font=\Huge\bfseries,
+      text=sudsteal] at (current page.north east) {#1};
+  \end{tikzpicture}}
+
+% Homework frame body: what to do, with the handout path.
+\newcommand{\handout}[1]{\par\vfill{\footnotesize Full handout: \texttt{#1}}}

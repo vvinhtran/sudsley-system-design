@@ -1,0 +1,245 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{sudsley}
+
+% A UML stick figure for use-case diagrams: \actor{(x,y)}{name}{label}.
+\newcommand{\actor}[3]{%
+  \begin{scope}[shift={#1}]
+    \draw (0,0.42) circle (0.12);
+    \draw (0,0.30) -- (0,0) (-0.2,0.2) -- (0.2,0.2) (0,0) -- (-0.15,-0.25)
+          (0,0) -- (0.15,-0.25);
+    \node[font=\small, below] at (0,-0.28) {#3};
+    \coordinate (#2) at (0,0.15);
+  \end{scope}}
+
+\title{System Design}
+\subtitle{Introduction}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{What is system design?}
+  Also called architecture design. It covers:
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item Functional and non-functional requirements
+        \item Capacity estimation
+        \item Relational and NoSQL databases
+        \item Vertical scaling, horizontal scaling, sharding
+        \item Load balancing
+        \item Primary--secondary replication
+        \item Caches and CDNs
+        \item Stateless and stateful servers
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item Datacenter georouting
+        \item Message queues, publish--subscribe
+        \item Performance metrics, monitoring, logging
+        \item Build, test, configure, and deploy automation
+        \item Finding single points of failure
+        \item API rate limiting
+        \item Service level agreements
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Resources for system design interviews}
+  \begin{enumerate}
+    \item Sukumar Ghosh, \emph{Distributed Systems: An Algorithmic Approach}
+    \item The System Design Primer:
+      \url{https://github.com/donnemartin/system-design-primer}
+    \item Roberto Vitillo, \emph{Understanding Distributed Systems}, 2nd ed.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{How we'll learn}
+  \centering
+  \begin{tabularx}{\textwidth}{@{}>{\bfseries}l X@{}}
+    \toprule
+    Lecture & Topics \\
+    \midrule
+    1. Introduction & The scenario, product ideas, the MVP, high-level design \\
+    2. High-level and component design & The model design, the thirteen component questions \\
+    3. Component implementation & Approaching a new codebase \\
+    4. Code review and analysis & Reading code, the cost of code \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+\section{Welcome to Sudsley!}
+
+\begin{frame}{Welcome to Sudsley!}
+  \Large Today, you're joining the founding engineering team of a disruptive new startup.
+\end{frame}
+
+\begin{frame}{The problems we're solving}
+  \begin{enumerate}
+    \item<1-> \textbf{Wasted time.} Customers travel to and wait at the laundromat, unsure
+      when their machine will be done.
+    \item<2-> \textbf{Inconvenience.} Machines are occupied, forcing customers to wait or
+      come back later.
+    \item<3-> \textbf{Forgotten clothes.} Clothes are often left in machines long after the
+      cycle finishes.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Our secret weapon: the smart laundry machine}
+  At the heart of Sudsley is our proprietary, next-generation washer and dryer. Some very
+  smart engineers spent years developing it.
+
+  \bigskip
+  Every machine is internet-enabled, with an integrated API for complete remote control and
+  monitoring:
+  \begin{itemize}
+    \item \texttt{startCycle()}
+    \item \texttt{stopCycle()}
+    \item \texttt{getStatus()}: available, running, finished, time remaining, needs
+      maintenance
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Your job}
+  \begin{enumerate}
+    \item Explore product options and suggest ideas.
+    \item Design the product.
+    \item Implement the core components.
+  \end{enumerate}
+\end{frame}
+
+\section{Product ideas}
+
+\begin{frame}{Product ideas}
+  \Large What software should we build, and why?
+
+  \bigskip
+  \normalsize\alert{Discuss in groups.}
+\end{frame}
+
+\begin{frame}{Great ideas! But they don't matter that much}
+  The CEO and product managers (with your completely relevant input) have settled on an idea:
+  \alert{UberEats, Postmates, or DoorDash, but for laundry.}
+
+  \medskip
+  How they want it to work:
+  \begin{enumerate}
+    \small
+    \item A customer puts their laundry out on their front porch.
+    \item They open an app to request a launderer.
+    \item The launderer picks up the clothes and takes them to a Sudsley location.
+    \item The launderer puts the laundry in a machine.
+    \item The app keeps the customer up to date on the status of their clothes.
+    \item The launderer delivers the clothes back once they're finished.
+    \item The launderer gets a portion of the job revenue.
+  \end{enumerate}
+\end{frame}
+
+\section{Minimum viable product}
+
+\begin{frame}{Define the MVP requirements}
+  The \alert{minimum viable product} is an early version of a product with just enough
+  features to be functional.
+
+  \medskip
+  Guidelines for an MVP:
+  \begin{itemize}
+    \item Identify the must-have features.
+    \item Avoid unnecessary work.
+    \item Expect feedback from early users. This is not the forever-system.
+  \end{itemize}
+
+  \medskip
+  \alert{In groups:} define a rough MVP for the alpha version of Sudsley.
+\end{frame}
+
+\begin{frame}{Must-haves}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \small
+      \begin{itemize}
+        \item Assume about 10k initial customers
+        \item Customers can request a laundry job
+        \item Launderers can accept a laundry job
+        \item Launderers know which machine to put the clothes in
+        \item Customers know where their clothes are geographically
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \small
+      \begin{itemize}
+        \item Customers know the status of their laundry job
+        \item Customers pay through the app
+        \item Launderers get paid through the app
+        \item Customers can rate their laundry job
+        \item Basic statistics and telemetry
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\section{High-level design}
+
+\begin{frame}{Define the high-level design}
+  High-level (or macro-level) design is the first formal step of system design. It should be
+  easy to follow.
+  \begin{itemize}
+    \item Identifies the necessary components (microservices, external services, clients)
+      without detailing their implementation
+    \item Aligns everyone on the project's goals and helps distribute responsibilities
+  \end{itemize}
+  May also include:
+  \begin{itemize}
+    \item UI designs and data flow diagrams
+    \item The technology stack
+    \item The deployment procedure
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Design tools}
+  Many high-level designs are drawn as UML diagrams, though this is not strictly required.
+  \begin{itemize}
+    \item draw.io: \url{https://app.diagrams.net/}
+    \item Lucidchart: \url{https://www.lucidchart.com/}
+    \item Mermaid: \url{https://mermaid.js.org/}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Example: a use-case diagram}
+  \centering
+  \begin{tikzpicture}[
+      uc/.style={ellipse, draw, minimum width=28mm, minimum height=9mm, font=\small},
+      every edge/.style={draw, thin}]
+    \node[draw, rounded corners, minimum width=48mm, minimum height=50mm,
+      label={[font=\small]above:Online bookstore}] (sys) {};
+    \node[uc] (browse) at ([yshift=16mm]sys.center) {Browse books};
+    \node[uc] (buy) at (sys.center) {Buy a book};
+    \node[uc] (login) at ([yshift=-16mm]sys.center) {Log in};
+    \actor{(-5,0)}{cust}{Customer}
+    \actor{(5,0)}{pay}{Payment provider}
+    \actor{(5,-1.6)}{idp}{Identity provider}
+    \path (cust) edge (browse.west) (cust) edge (buy.west) (cust) edge (login.west)
+          (buy.east) edge (pay) (login.east) edge (idp);
+    \draw[-{Stealth}, dashed] (buy) -- node[right, font=\scriptsize]{include} (login);
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Homework 1: high-level design (collaborative)}
+  \begin{enumerate}
+    \item Based on the product and MVP requirements from class, write a brief description of
+      how you think the system should look and operate. No more than half a page.
+    \item Create a high-level design for the Sudsley system.
+      \begin{itemize}
+        \item A business or system use-case diagram is a good start.
+        \item You don't need to follow UML strictly. Make it readable and intuitive.
+      \end{itemize}
+  \end{enumerate}
+  \alert{Be flexible! No design is correct or incorrect.}
+  \handout{assignments/hw1-high-level-design/HOMEWORK.md}
+\end{frame}
+
+\end{document}
